@@ -1,0 +1,20 @@
+import MatrixRain from '@/components/MatrixRain';
+import Terminal from '@/components/Terminal';
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-black p-4 relative overflow-hidden">
+      <MatrixRain />
+      <div className="background-text neon-text fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none">
+        SNS_PROV
+      </div>
+      <div className="container mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+          <Terminal id="terminal1" title="Программа" />
+          <Terminal id="terminal2" title="Камера" />
+          <Terminal id="terminal3" title="База данных" />
+          <Terminal id="terminal4" title="Консоль программы" />
+        </div>
+      </div>
+    </div>
+  );
+}
