@@ -22,6 +22,15 @@
             font-size: 18px;
             text-align: center;
         }
+        button {
+            background: lime;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 5px;
+        }
         #randomNumbers {
             font-size: 20px;
             margin-top: 20px;
@@ -30,33 +39,31 @@
             width: 150px;
             height: auto;
         }
-        .link {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-        #diamondMessage {
+        #diamondMessage, #errorMessage {
             display: none;
             font-size: 18px;
-            color: red;
             margin-top: 20px;
-        }
-        #history {
-            margin-top: 30px;
-            font-size: 16px;
-            text-align: left;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-            border: 1px solid lime;
-            padding: 10px;
-            display: none;
         }
         #errorMessage {
-            display: none;
+            color: red;
             font-size: 24px;
             font-weight: bold;
-            color: red;
-            margin-top: 20px;
+        }
+        .loading::after {
+            content: "⏳ В обработке";
+            animation: loadingDots 1.5s infinite steps(4);
+        }
+        @keyframes loadingDots {
+            0% { content: "⏳ В обработке"; }
+            33% { content: "⏳ В обработке."; }
+            66% { content: "⏳ В обработке.."; }
+            100% { content: "⏳ В обработке..."; }
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -64,25 +71,25 @@
 
 <div class="container">
     <h1>Алмаз Генератор</h1>
-    <p>ID енгізіңіз :</p>
+    <p>ID енгізіңіз:</p>
     <input type="text" id="idInput" maxlength="12" placeholder="ID">
-    <p>Количество алмазов:</p>
+    <p>Алмаздың саны:</p>
     <input type="text" id="extraInput" maxlength="5" placeholder="5 сан">
     
     <p><img src="https://yt3.googleusercontent.com/rt855NZ6C3MYfNsekzonK483XJyZBS_3LIFzbCXpwKx0AD8HUJqmCcjN8nN3eMa6-UE6QNPJZg=s900-c-k-c0x00ffffff-no-rj" class="hacker"></p>
     
-    <p id="randomNumbers">Сандар генерациясы күтілуде...</p>
-    
-    <button onclick="startRandom()">Генерацияны бастау</button>
+    <p id="randomNumbers">Генерация күтілуде...</p>
 
-    <p class="link">
-        <a href="https://www.tiktok.com/@ff_sns22?_t=ZS-8tiOHTkfb5G&_r=1" target="_blank" id="registerLink" onclick="setRegistered()">Осы сілтемеге тіркеліңіз</a>
+    <p>
+        <a href="https://www.tiktok.com/@ff_sns22" target="_blank" id="registerLink" onclick="setRegistered()">Осы сілтемеге тіркеліңіз</a>
     </p>
-    
-    <button onclick="confirmRegistration()">Тіркелдім</button>
+
+    <div class="button-container">
+        <button onclick="confirmRegistration()">Тіркелдім</button>
+        <button id="completeButton" style="display: none;" onclick="completeOperation()">Операцияны аяқтау</button>
+    </div>
 
     <p id="diamondMessage">⚠️ Алмаз 12 сағат ішінде түседі!</p>
-
     <p id="errorMessage">❌ Вы ещё не подписывались!</p>
 
     <div id="history">
@@ -92,24 +99,35 @@
 </div>
 
 <script>
+    let isRegistered = false;
+    let registerClicked = false;
+    let isGenerationComplete = false;
     let historyData = {};
     let randomInterval;
-    let duration = 300000; // 5 минут (миллисекунд)
-    let slowdownFactor = 50;
-    let isRegistered = false; // TikTok-қа кіргенін тексеру үшін
 
     function setRegistered() {
-        isRegistered = true; // TikTok сілтемесіне кірсе, true болады
+        isRegistered = true;
     }
 
     function confirmRegistration() {
-        if (!isRegistered) {
+        if (registerClicked) {
             let errorMessage = document.getElementById("errorMessage");
+            errorMessage.innerText = "❌ Произошла ошибка, повторите позже!";
             errorMessage.style.display = "block";
-
             setTimeout(() => {
                 errorMessage.style.display = "none";
-            }, 4000); // 4 секундтан кейін жоғалады
+                location.reload();
+            }, 4000);
+            return;
+        }
+
+        if (!isRegistered) {
+            let errorMessage = document.getElementById("errorMessage");
+            errorMessage.innerText = "❌ Вы ещё не подписывались!";
+            errorMessage.style.display = "block";
+            setTimeout(() => {
+                errorMessage.style.display = "none";
+            }, 4000);
             return;
         }
 
@@ -117,79 +135,81 @@
         let diamonds = document.getElementById("extraInput").value.trim();
 
         if (id === "" || diamonds === "") {
-            alert("ID және алмаз санын енгізіңіз!");
+            let errorMessage = document.getElementById("errorMessage");
+            errorMessage.innerText = "❌ Неверные данные!";
+            errorMessage.style.display = "block";
+            setTimeout(() => {
+                errorMessage.style.display = "none";
+            }, 4000);
             return;
         }
 
-        let isValid = id.endsWith("+");
-        let cleanId = id.replace("+", "").trim(); 
-
-        if (!isValid) {
-            alert("Произошла ошибка! ID-нің соңына '+' белгісін қойыңыз.");
-            return;
-        }
-
-        if (historyData[cleanId]) {
-            let oldEntry = document.getElementById("entry-" + cleanId);
-            if (oldEntry) {
-                oldEntry.remove();
-            }
-        }
+        registerClicked = true;
 
         let historyList = document.getElementById("historyList");
         let newEntry = document.createElement("li");
-        newEntry.id = "entry-" + cleanId;
-        newEntry.innerText = "ID: " + cleanId + " | Алмаз: " + diamonds + " | Статус: ⏳ В обработке...";
-
+        newEntry.id = "entry-" + id;
+        newEntry.classList.add("loading"); 
+        newEntry.innerText = "ID: " + id + " | Алмаз: " + diamonds + " | Статус: ";
         historyList.appendChild(newEntry);
+        historyData[id] = newEntry;
+
         document.getElementById("history").style.display = "block";
-        historyData[cleanId] = newEntry;
-
-        setTimeout(() => {
-            newEntry.innerText = "ID: " + cleanId + " | Алмаз: " + diamonds + " | Статус: ✅ Отправлено!";
-        }, 5 * 60 * 1000);
+        startRandomGeneration();
     }
 
-    function getRandomCharacter() {
-        let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        return chars[Math.floor(Math.random() * chars.length)];
-    }
-
-    function generateRandomString() {
-        let length = Math.floor(Math.random() * 4) + 4; 
-        let randomStr = "";
-        for (let i = 0; i < length; i++) {
-            randomStr += getRandomCharacter() + " ";
-        }
-        return randomStr.trim();
-    }
-
-    function startRandom() {
+    function startRandomGeneration() {
         let elapsed = 0;
         let speed = 100;
 
         randomInterval = setInterval(() => {
             document.getElementById("randomNumbers").innerText = "Генерация: " + generateRandomString();
-            
             elapsed += speed;
-            if (elapsed >= duration) {
+
+            if (elapsed >= 60000) {
                 clearInterval(randomInterval);
-                gradualStop();
+                document.getElementById("randomNumbers").innerText = "✅ Генерация аяқталды!";
+                isGenerationComplete = true;
+                document.getElementById("completeButton").style.display = "block";
             }
         }, speed);
     }
 
-    function gradualStop() {
-        let speed = 100;
-        let stopInterval = setInterval(() => {
-            document.getElementById("randomNumbers").innerText = "Генерация: " + generateRandomString();
-            speed += slowdownFactor; 
+    function generateRandomString() {
+        let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let randomStr = "";
+        let length = Math.floor(Math.random() * 4) + 4;
+        for (let i = 0; i < length; i++) {
+            randomStr += chars[Math.floor(Math.random() * chars.length)] + " ";
+        }
+        return randomStr.trim();
+    }
 
-            if (speed > 2000) {
-                clearInterval(stopInterval);
-                document.getElementById("randomNumbers").innerText = "✅ Генерация аяқталды!";
-            }
-        }, speed);
+    function generateRandomHours() {
+        // Рандомды 5-24 аралығында сағатты таңдау
+        return Math.floor(Math.random() * 20) + 5; // 5 пен 24 аралығында
+    }
+
+    function completeOperation() {
+        if (!isGenerationComplete) {
+            alert("Генерация жүріп жатыр...");
+            return;
+        }
+
+        let id = document.getElementById("idInput").value.trim();
+        let diamonds = document.getElementById("extraInput").value.trim();
+        let newEntry = document.getElementById("entry-" + id);
+
+        newEntry.classList.remove("loading");
+
+        if (id.endsWith(" ")) {
+            newEntry.innerText = "ID: " + id + " | Алмаз: " + diamonds + " | Статус: ✅ Алмаз отправлено!";
+        } else {
+            let randomHours = generateRandomHours(); // Рандомды сағатты алу
+            newEntry.innerText = "ID: " + id + " | Алмаз: " + diamonds + " | Статус: ⚠️ Алмаз " + randomHours + " сағаттан кейін түседі!";
+        }
+
+        document.getElementById("completeButton").style.display = "none";
     }
 </script>
 
